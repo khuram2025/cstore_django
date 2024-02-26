@@ -6,6 +6,7 @@ from .serializers import CustomUserSerializer, LoginSerializer, SignupSerializer
 from rest_framework.permissions import IsAuthenticated
 from .serializers import LoginSerializer
 from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
 
 class LoginAPIView(APIView):
     def post(self, request):
@@ -21,8 +22,14 @@ class LoginAPIView(APIView):
                 return Response({'message': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class LogoutAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
-
+    def post(self, request):
+        # Delete the user's auth token to log them out
+        request.user.auth_token.delete()
+        return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
 
 class SignupAPIView(APIView):
     def post(self, request):
