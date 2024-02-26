@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/signup/', api_views.SignupAPIView.as_view(), name='api_signup'),
 
     path('api/home/', api_views.HomeView.as_view(), name='api_home'),
+    path('api/logout/', api_views.LogoutAPIView.as_view(), name='logout'),
 
 
 ]
