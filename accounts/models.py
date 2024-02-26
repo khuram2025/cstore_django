@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, mobile, password=None, **extra_fields):
@@ -38,6 +39,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class Business(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='businesses')
     name = models.CharField(max_length=100)
     categories = models.CharField(max_length=200, blank=True)  # A simple string for now
 
