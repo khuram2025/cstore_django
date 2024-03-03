@@ -83,3 +83,7 @@ class AddTransactionAPIView(APIView):
             # If data is invalid, return an error response
             print("Received invalid data for transaction:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+        
