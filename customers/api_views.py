@@ -2,22 +2,12 @@ from accounts.models import Business
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Customer, CustomerAccount
+from .models import Customer, CustomerAccount, Transaction
 from .serializers import CustomerAccountSerializer, CustomerSerializer, TransactionSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import generics
 
-class CustomerListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user_businesses = request.user.businesses.all()
-        customers = Customer.objects.filter(businesses__in=user_businesses).distinct()
-        serializer = CustomerSerializer(customers, many=True)
-        serialized_data = serializer.data
-        print("Serialized Data Customers:", serialized_data)
-        return Response(serializer.data)
 
 class CustomerCreateLinkView(APIView):
     def post(self, request):
@@ -105,3 +95,18 @@ class AddTransactionView(APIView):
         
         print("Serializer errors:", serializer.errors)  # Print serializer errors if the data is invalid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TransactionListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, customer_account_id):
+        # Ensure the customer account belongs to the business of the logged-in user
+        customer_account = get_object_or_404(CustomerAccount, id=customer_account_id, business__user=request.user)
+
+        # Fetch transactions for the specified customer account
+        transactions = Transaction.objects.filter(customer_account=customer_account)
+        
+        # Serialize and return the transactions
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
