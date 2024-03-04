@@ -67,8 +67,8 @@ class CustomerCreateLinkView(APIView):
             else:
                 print(f"Serializer errors: {serializer.errors}")
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-                     
+
+
 class CustomerAccountListView(generics.ListAPIView):
     serializer_class = CustomerAccountSerializer
     permission_classes = [IsAuthenticated]
@@ -82,36 +82,26 @@ class CustomerAccountListView(generics.ListAPIView):
         return CustomerAccount.objects.filter(business=business)
 
     
-            
-class AddTransactionAPIView(APIView):
+class AddTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        print("Received request data for new transaction:", request.data)
+    def post(self, request, *args, **kwargs):
+        print("Received request data:", request.data)  # Print the incoming request data
 
         serializer = TransactionSerializer(data=request.data)
         if serializer.is_valid():
-            customer_account_id = serializer.validated_data.get('customer_account').id
-            print(f"Validated customer account ID: {customer_account_id}")
-
-            # Ensure the customer account is associated with one of the user's businesses
-            customer_account = get_object_or_404(CustomerAccount, id=customer_account_id)
-            user_businesses = request.user.businesses.all()
-
-            if customer_account.business in user_businesses:
-                # Save the transaction if the customer account's business is owned by the user
-                saved_transaction = serializer.save()
-                print(f"Transaction saved successfully with ID: {saved_transaction.id}")
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                # If the business does not belong to the user, deny access
-                print("Attempt to add transaction to a business not owned by the user.")
-                return Response({'message': 'You do not have permission to add transactions for this customer account.'}, status=status.HTTP_403_FORBIDDEN)
-        else:
-            # If data is invalid, return an error response
-            print("Received invalid data for transaction:", serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Ensure the customer account belongs to the business of the logged-in user
+            customer_account_id = serializer.validated_data['customer_account'].id
+            customer_account = CustomerAccount.objects.filter(id=customer_account_id, business__user=request.user).first()
+            
+            if not customer_account:
+                print("Customer account not found in user's business")  # Print error if the customer account is not found
+                return Response({"error": "Customer account not found in your business"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Save the transaction since the customer account is valid
+            transaction = serializer.save()
+            print("Transaction saved successfully:", transaction.id)  # Print success message with transaction ID
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         
-
-
-        
+        print("Serializer errors:", serializer.errors)  # Print serializer errors if the data is invalid
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
