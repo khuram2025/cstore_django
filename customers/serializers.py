@@ -19,7 +19,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             opening_balance = account.opening_balance
             given_amount = account.transactions.filter(transaction_type='Given').aggregate(Sum('amount'))['amount__sum'] or 0
             taken_amount = account.transactions.filter(transaction_type='Take').aggregate(Sum('amount'))['amount__sum'] or 0
-            account_balance = opening_balance + given_amount - taken_amount
+            account_balance = opening_balance + taken_amount - given_amount
             total_balance += account_balance
         return total_balance
 
