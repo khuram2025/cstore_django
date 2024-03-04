@@ -3,9 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Customer, CustomerAccount
-from .serializers import CustomerSerializer, TransactionSerializer
+from .serializers import CustomerAccountSerializer, CustomerSerializer, TransactionSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework import generics
 
 class CustomerListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -36,8 +37,15 @@ class CustomerCreateLinkView(APIView):
                 print(f"Business with ID {business_id} not found.")
                 return Response({'message': 'Business not found'}, status=status.HTTP_404_NOT_FOUND)
 
+            # Check if CustomerAccount already exists for this customer and business
+            customer_account, created = CustomerAccount.objects.get_or_create(customer=customer, business=business)
+            if created:
+                print("Created new CustomerAccount for existing customer and business.")
+            else:
+                print("CustomerAccount already exists for this customer and business.")
+
             customer.businesses.add(business)
-            return Response({'message': 'Customer linked to business'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Customer linked to business and CustomerAccount ensured'}, status=status.HTTP_200_OK)
         else:
             print("Customer not found, creating new customer")
             serializer = CustomerSerializer(data=request.data)
@@ -50,10 +58,30 @@ class CustomerCreateLinkView(APIView):
                     return Response({'message': 'Business not found'}, status=status.HTTP_404_NOT_FOUND)
                     
                 customer.businesses.add(business)
+                
+                # Create CustomerAccount for the new customer and business
+                CustomerAccount.objects.create(customer=customer, business=business)
+                print("Created new CustomerAccount for new customer and business.")
+
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 print(f"Serializer errors: {serializer.errors}")
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+                     
+class CustomerAccountListView(generics.ListAPIView):
+    serializer_class = CustomerAccountSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        user = self.request.user
+        # Assuming a user will only have one business or you're okay with just using the first
+        business = user.businesses.first()
+        if not business:
+            # Handle the case where the user has no associated business
+            return CustomerAccount.objects.none()
+        return CustomerAccount.objects.filter(business=business)
+
+    
             
 class AddTransactionAPIView(APIView):
     permission_classes = [IsAuthenticated]
