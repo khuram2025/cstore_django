@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Customer
+from .models import Customer, CustomerAccount
 
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone', 'display_businesses')
@@ -9,3 +9,4 @@ class CustomerAdmin(admin.ModelAdmin):
     display_businesses.short_description = 'Businesses'
 
 admin.site.register(Customer, CustomerAdmin)
+admin.site.register(CustomerAccount)
