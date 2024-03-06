@@ -70,6 +70,8 @@ class CustomerAccountListView(generics.ListAPIView):
             # Handle the case where the user has no associated business
             return CustomerAccount.objects.none()
         return CustomerAccount.objects.filter(business=business)
+    
+    
 
     
 class AddTransactionView(APIView):
