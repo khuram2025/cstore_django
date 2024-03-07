@@ -7,6 +7,8 @@ from .serializers import CustomerAccountSerializer, CustomerSerializer, Transact
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import generics
+from django.db.models import Sum, Count
+from decimal import Decimal
 
 
 class CustomerCreateLinkView(APIView):
@@ -62,14 +64,50 @@ class CustomerCreateLinkView(APIView):
 class CustomerAccountListView(generics.ListAPIView):
     serializer_class = CustomerAccountSerializer
     permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         user = self.request.user
-        # Assuming a user will only have one business or you're okay with just using the first
         business = user.businesses.first()
         if not business:
-            # Handle the case where the user has no associated business
             return CustomerAccount.objects.none()
         return CustomerAccount.objects.filter(business=business)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        
+        # Calculate additional data
+        total_customers = queryset.count()
+        total_sum_given = Transaction.objects.filter(
+            customer_account__in=queryset, 
+            transaction_type=Transaction.GIVEN
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        
+        total_sum_taken = Transaction.objects.filter(
+            customer_account__in=queryset, 
+            transaction_type=Transaction.TAKE
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        # Assuming total_sum as the sum of all 'Given' transactions minus all 'Take' transactions
+        total_sum = total_sum_given - total_sum_taken
+
+        # Adding the calculated data to the response
+        response_data = {
+            'total_customers': total_customers,
+            'total_sum': total_sum,
+            'accounts': data
+        }
+        
+        print("Response Data:", response_data)
+        
+        return Response(response_data)
     
     
 
