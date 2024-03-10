@@ -36,14 +36,17 @@ class CustomerAccountSerializer(serializers.ModelSerializer):
         fields = ['id', 'customer_name', 'mobile_number', 'opening_balance', 'total_balance']
 
     def get_total_balance(self, obj):
+        # Aggregate sums of 'Given' and 'Take' transactions
         total_given = Transaction.objects.filter(customer_account=obj, transaction_type='Given').aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         total_taken = Transaction.objects.filter(customer_account=obj, transaction_type='Take').aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         
-        # Ensure total_given and total_taken are Decimal
-        total_given = Decimal(total_given)
+        # Ensure opening_balance, total_given, and total_taken are Decimal
+        opening_balance = Decimal(obj.opening_balance) if not isinstance(obj.opening_balance, Decimal) else obj.opening_balance
+        total_given = Decimal(total_given)  # This is likely redundant due to the Decimal wrapping above but ensures consistency
         total_taken = Decimal(total_taken)
 
-        total_balance = obj.opening_balance + total_given - total_taken
+        # Calculate total balance
+        total_balance = opening_balance + total_given - total_taken
         return total_balance
 
 

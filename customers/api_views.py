@@ -108,10 +108,7 @@ class CustomerAccountListView(generics.ListAPIView):
         print("Response Data:", response_data)
         
         return Response(response_data)
-    
-    
-
-    
+       
 class AddTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -135,6 +132,39 @@ class AddTransactionView(APIView):
         
         print("Serializer errors:", serializer.errors)  # Print serializer errors if the data is invalid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CustomerAccountEditProfileView(APIView):
+    def put(self, request, account_id):
+        try:
+            customer_account = CustomerAccount.objects.get(id=account_id)
+        except CustomerAccount.DoesNotExist:
+            return Response({'message': 'CustomerAccount not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extracting fields from request
+        name = request.data.get('name')
+        phone = request.data.get('phone')
+        opening_balance = request.data.get('opening_balance')
+
+        # Update the Customer model
+        customer = customer_account.customer
+        if name:
+            customer.name = name
+        if phone:
+            customer.phone = phone
+        customer.save()
+
+        # Update the CustomerAccount model
+        if opening_balance is not None:
+            customer_account.opening_balance = opening_balance
+        customer_account.save()
+
+        # Prepare the response using serializers
+        customer_data = CustomerSerializer(customer).data
+        customer_account_data = CustomerAccountSerializer(customer_account).data
+        # Combine customer and customer account data in the response
+        response_data = {**customer_data, **customer_account_data}
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class TransactionListView(APIView):
