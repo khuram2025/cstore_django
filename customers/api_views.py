@@ -95,18 +95,23 @@ class CustomerAccountListView(generics.ListAPIView):
             transaction_type=Transaction.TAKE
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
-        # Assuming total_sum as the sum of all 'Given' transactions minus all 'Take' transactions
-        total_sum = total_sum_given - total_sum_taken
+        # Adding explicitly what the business will pay and receive
+        total_sum_paid = total_sum_given
+        total_sum_received = total_sum_taken
+
+        # Assuming total_sum as the net balance (what will be received minus what will be paid)
+        total_net_balance = total_sum_received - total_sum_paid
 
         # Adding the calculated data to the response
         response_data = {
             'total_customers': total_customers,
-            'total_sum': total_sum,
+            'total_sum_paid': total_sum_paid,
+            'total_sum_received': total_sum_received,
+            'total_net_balance': total_net_balance,
             'accounts': data
         }
         
-        print("Response Data:", response_data)
-        
+        return Response(response_data)
         return Response(response_data)
        
 class AddTransactionView(APIView):
@@ -180,3 +185,41 @@ class TransactionListView(APIView):
         # Serialize and return the transactions
         serializer = TransactionSerializer(transactions, many=True)
         return Response(serializer.data)
+
+
+class TransactionDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, transaction_id, user):
+        """
+        Helper method to get the transaction object with user and transaction_id validation.
+        """
+        return get_object_or_404(Transaction, id=transaction_id, customer_account__business__user=user)
+
+    def get(self, request, transaction_id):
+        """
+        Retrieve a single transaction.
+        """
+        transaction = self.get_object(transaction_id, request.user)
+        serializer = TransactionSerializer(transaction)
+        return Response(serializer.data)
+
+    def put(self, request, transaction_id):
+        """
+        Update a transaction.
+        """
+        transaction = self.get_object(transaction_id, request.user)
+        serializer = TransactionSerializer(transaction, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, transaction_id):
+        """
+        Delete a transaction.
+        """
+        transaction = self.get_object(transaction_id, request.user)
+        transaction.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
