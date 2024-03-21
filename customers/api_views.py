@@ -10,6 +10,25 @@ from rest_framework import generics
 from django.db.models import Sum, Count
 from decimal import Decimal
 
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics
+
+class CustomerAccountListView(generics.ListAPIView):
+    serializer_class = CustomerAccountSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]  # Include DjangoFilterBackend if you plan on using other types of filtering alongside search.
+    search_fields = ['customer__name', 'customer__phone']  # This allows searching by customer name and phone number.
+
+    def get_queryset(self):
+        user = self.request.user
+        business = user.businesses.first()
+        if not business:
+            return CustomerAccount.objects.none()
+        return CustomerAccount.objects.filter(business=business)
+    
+    # The rest of your view remains unchanged
+
+
 
 class CustomerCreateLinkView(APIView):
     def post(self, request):
@@ -64,6 +83,8 @@ class CustomerCreateLinkView(APIView):
 class CustomerAccountListView(generics.ListAPIView):
     serializer_class = CustomerAccountSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]  # Include DjangoFilterBackend if you plan on using other types of filtering alongside search.
+    search_fields = ['customer__name', 'customer__phone']
 
     def get_queryset(self):
         user = self.request.user
@@ -112,7 +133,7 @@ class CustomerAccountListView(generics.ListAPIView):
         }
         
         return Response(response_data)
-        return Response(response_data)
+    
        
 class AddTransactionView(APIView):
     permission_classes = [IsAuthenticated]
