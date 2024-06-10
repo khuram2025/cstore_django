@@ -12,6 +12,9 @@ from rest_framework.authentication import TokenAuthentication
 
 class LoginAPIView(APIView):
     def post(self, request):
+        # Print the incoming request data
+        print("Received data:", request.data)
+        
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             mobile = serializer.validated_data['mobile']
@@ -22,13 +25,22 @@ class LoginAPIView(APIView):
                 # Assuming each user has one business, get the first one
                 business = user.businesses.first()
                 business_id = business.id if business else None
-                return Response({
+                
+                response_data = {
                     'token': token.key,
                     'business_name': user.business_name,
-                    'business_id': business_id
-                }, status=status.HTTP_200_OK)
+                    'business_id': business_id,
+                    'user_name': user.name,
+                    'user_mobile': user.mobile,
+                }
+                
+                # Print the response data
+                print("Response data:", response_data)
+                
+                return Response(response_data, status=status.HTTP_200_OK)
             else:
                 return Response({'message': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+      
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

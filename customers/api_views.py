@@ -9,10 +9,10 @@ from rest_framework import status
 from rest_framework import generics
 from django.db.models import Sum, Count
 from decimal import Decimal
-
+from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics
-
+import json
 
 
 class CustomerCreateLinkView(APIView):
@@ -112,10 +112,14 @@ class CustomerAccountListView(generics.ListAPIView):
 class AddTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @csrf_exempt
     def post(self, request, *args, **kwargs):
         print("Received request data:", request.data)  # Print the incoming request data
 
-        customer_data = request.data.pop('customer_account')
+        # Create a mutable copy of the request data
+        data = request.data.copy()
+
+        customer_data = json.loads(data.pop('customer_account')[0])
         customer_info = customer_data['customer']
         business_id = customer_data['business']
         
@@ -136,9 +140,9 @@ class AddTransactionView(APIView):
         )
 
         # Add the customer account to the request data
-        request.data['customer_account'] = customer_account.id
+        data['customer_account'] = customer_account.id
 
-        serializer = TransactionSerializer(data=request.data)
+        serializer = TransactionSerializer(data=data)
         if serializer.is_valid():
             transaction = serializer.save()
             print("Transaction saved successfully:", transaction.id)  # Print success message with transaction ID
@@ -146,7 +150,6 @@ class AddTransactionView(APIView):
         
         print("Serializer errors:", serializer.errors)  # Print serializer errors if the data is invalid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class CustomerAccountEditProfileView(APIView):
     def put(self, request, account_id):
