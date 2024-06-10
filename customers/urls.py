@@ -13,3 +13,9 @@ urlpatterns = [
     path('api/customer-accounts/edit/<int:account_id>/', api_views.CustomerAccountEditProfileView.as_view(), name='customer-account-edit'),
 
 ]
+
+
+
+
+
+

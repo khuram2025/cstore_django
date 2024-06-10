@@ -1,4 +1,4 @@
-from accounts.models import CustomUser
+from accounts.models import Business, CustomUser
 from rest_framework import serializers
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -25,7 +25,12 @@ class SignupSerializer(serializers.ModelSerializer):
             name=validated_data.get('name', ''),
             business_name=validated_data['business_name']
         )
+
+        # Create a Business for the new user
+        Business.objects.create(user=user, name=validated_data['business_name'])
+
         return user
+
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -34,3 +39,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = ['mobile', 'name', 'business_name']
 
 
+
+class RequestOTPSerializer(serializers.Serializer):
+    mobile = serializers.CharField()
+
+class VerifyOTPSerializer(serializers.Serializer):
+    mobile = serializers.CharField()
+    otp = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
