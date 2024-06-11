@@ -33,3 +33,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'store.channab.com','*']  # Replace 'yourdomain.com' with your actual domain
