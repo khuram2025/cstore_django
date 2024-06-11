@@ -34,4 +34,20 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'store.channab.com','*']  # Replace 'yourdomain.com' with your actual domain
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'store.channab.com', '54.198.43.6']
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://store.channab.com',
+    'http://store.channab.com',
+    'http://54.198.43.6',
+    'https://54.198.43.6',
+]
+
+# Secure cookie settings
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
