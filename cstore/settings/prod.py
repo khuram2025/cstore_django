@@ -34,7 +34,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'store.channab.com', '54.198.43.6']
+ALLOWED_HOSTS = ['*']
+
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
